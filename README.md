@@ -1,11 +1,7 @@
 # pyLOT
 
 This tutorial will guide you through the functionalities of the pyLOT library for linearized optimal transport (LOT).  LOT is used to transform point-cloud-valued data or, more specifically, measure-valued data into an $L_2$ space.  Once in this $L_2$ space, one can perform many of the machine learning techniques that are available in other packages.  For many problems, this framework also saves tons of computation time.  LOT works by using optimal transport (OT) by sending each measure-valued data point to an optimal transport map with respect to a fixed reference measure $\sigma$:
-
-$$
-LOT_\sigma (\mu) = T_{\sigma}^{\mu} := \arg\min_{T: T_\sharp \sigma = \mu} \int_{\mathbb{R}^d} \Vert T(x) - x \Vert d\sigma(x).
-$$
-
+$$ LOT_\sigma (\mu) = {\arg\min}_{T: T_\sharp \sigma = \mu} \int_{\mathbb{R}^d} \Vert T(x) - x \Vert^2 d\sigma(x).$$
 To reconstruct measures from the LOT embedding, one simply pushes forward the reference measure by the LOT embedding (which applies the exponential map on the Wasserstein manifold).
 
 
@@ -20,7 +16,7 @@ This guide will demonstrate how to use this library effectively by using two toy
 
 
 ```python
-# Import necessary classes from the pyLOT library
+# Import necessary libraries
 from pyLOT.classifier import LOTClassifier
 from pyLOT.barycenters import LOTBarycenter
 from pyLOT.embed import LOTEmbedding
@@ -28,6 +24,7 @@ from pyLOT.reduction import LOTDimensionalityReduction
 # libraries for computation and plotting
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import ListedColormap
 # libraries for PCA visualization
 from sklearn.model_selection import train_test_split
@@ -58,7 +55,7 @@ For this toy data, we will create four classes of point-cloud-valued data, where
 
 
 ```python
-from pyLOT.tutorial_data_generation import generate_mnist_clouds, generate_gauss_point_clouds
+from tutorial_data_generation import generate_mnist_clouds, generate_gauss_point_clouds
 
 # Generate MNIST clouds, masses, and labels
 mnist_pclouds, mnist_masses, mnist_labels, mnist_class_clouds = generate_mnist_clouds()
@@ -202,9 +199,103 @@ print(f'Time taken for Gaussian embeddings: {gauss_time_taken:.2f} seconds')
 ```
 
     Generating embeddings for MNIST data...
-    Time taken for MNIST embeddings: 105.40 seconds
+    Time taken for MNIST embeddings: 107.66 seconds
     Generating embeddings for Gaussian data...
     Time taken for Gaussian embeddings: 0.09 seconds
+
+
+### LOT Embeddings from Barycenter
+
+Here, we will generate LOT embeddings by using the barycenters of all the classes in the MNIST dataset.  This should help with dimensionality reduction and other tasks.  We will iterate this a couple times to see whether using the barycenter as the reference measure actually helps for downstream machine learning tasks.
+
+
+```python
+all_bary_embeddings, \
+    all_emd_lists, \
+    barycenter_list, \
+    barycenter_label_list = LOTEmbedding.compute_barycenter_embeddings(n_iterations=3, 
+                                                    embeddings=mnist_embeddings, 
+                                                    labels=mnist_labels, 
+                                                    pclouds=mnist_pclouds, 
+                                                    masses=mnist_masses, 
+                                                    n_reference_points=mnist_reference_points, 
+                                                    n_dim=2)
+
+# all_bary_embeddings - all barycenter embeddings for the number of iterations
+# all_emd_lists - all embeddings separate for each class before concatenating
+# barycenter_list - list of barycenters generated
+# barycenter_label_list - list of barycenter labels generated
+```
+
+    Starting iteration 1...
+    Finished processing LOT embedding for class 0 in iteration 1
+    Time taken for barycenter embeddings: 97.27 seconds
+    Finished processing LOT embedding for class 1 in iteration 1
+    Time taken for barycenter embeddings: 199.36 seconds
+    Finished processing LOT embedding for class 2 in iteration 1
+    Time taken for barycenter embeddings: 301.01 seconds
+    Finished processing LOT embedding for class 3 in iteration 1
+    Time taken for barycenter embeddings: 401.34 seconds
+    Finished processing LOT embedding for class 4 in iteration 1
+    Time taken for barycenter embeddings: 504.32 seconds
+    Finished processing LOT embedding for class 5 in iteration 1
+    Time taken for barycenter embeddings: 602.40 seconds
+    Finished processing LOT embedding for class 6 in iteration 1
+    Time taken for barycenter embeddings: 702.98 seconds
+    Finished processing LOT embedding for class 7 in iteration 1
+    Time taken for barycenter embeddings: 804.31 seconds
+    Finished processing LOT embedding for class 8 in iteration 1
+    Time taken for barycenter embeddings: 903.80 seconds
+    Finished processing LOT embedding for class 9 in iteration 1
+    Time taken for barycenter embeddings: 1008.49 seconds
+    Iteration 1 complete. Total time: 1009.77 seconds.
+    
+    Starting iteration 2...
+    Finished processing LOT embedding for class 0 in iteration 2
+    Time taken for barycenter embeddings: 106.45 seconds
+    Finished processing LOT embedding for class 1 in iteration 2
+    Time taken for barycenter embeddings: 219.22 seconds
+    Finished processing LOT embedding for class 2 in iteration 2
+    Time taken for barycenter embeddings: 329.10 seconds
+    Finished processing LOT embedding for class 3 in iteration 2
+    Time taken for barycenter embeddings: 436.63 seconds
+    Finished processing LOT embedding for class 4 in iteration 2
+    Time taken for barycenter embeddings: 547.38 seconds
+    Finished processing LOT embedding for class 5 in iteration 2
+    Time taken for barycenter embeddings: 654.00 seconds
+    Finished processing LOT embedding for class 6 in iteration 2
+    Time taken for barycenter embeddings: 761.85 seconds
+    Finished processing LOT embedding for class 7 in iteration 2
+    Time taken for barycenter embeddings: 872.52 seconds
+    Finished processing LOT embedding for class 8 in iteration 2
+    Time taken for barycenter embeddings: 1359.46 seconds
+    Finished processing LOT embedding for class 9 in iteration 2
+    Time taken for barycenter embeddings: 2445.18 seconds
+    Iteration 2 complete. Total time: 2446.71 seconds.
+    
+    Starting iteration 3...
+    Finished processing LOT embedding for class 0 in iteration 3
+    Time taken for barycenter embeddings: 310.99 seconds
+    Finished processing LOT embedding for class 1 in iteration 3
+    Time taken for barycenter embeddings: 507.31 seconds
+    Finished processing LOT embedding for class 2 in iteration 3
+    Time taken for barycenter embeddings: 798.81 seconds
+    Finished processing LOT embedding for class 3 in iteration 3
+    Time taken for barycenter embeddings: 1156.64 seconds
+    Finished processing LOT embedding for class 4 in iteration 3
+    Time taken for barycenter embeddings: 1519.82 seconds
+    Finished processing LOT embedding for class 5 in iteration 3
+    Time taken for barycenter embeddings: 1645.82 seconds
+    Finished processing LOT embedding for class 6 in iteration 3
+    Time taken for barycenter embeddings: 1820.17 seconds
+    Finished processing LOT embedding for class 7 in iteration 3
+    Time taken for barycenter embeddings: 1929.33 seconds
+    Finished processing LOT embedding for class 8 in iteration 3
+    Time taken for barycenter embeddings: 2081.54 seconds
+    Finished processing LOT embedding for class 9 in iteration 3
+    Time taken for barycenter embeddings: 2205.45 seconds
+    Iteration 3 complete. Total time: 2207.08 seconds.
+    
 
 
 # Dimensionality Reduction and Plotting
@@ -218,12 +309,13 @@ Let's begin with preparing the MNIST embeddings for LDA and PCA.
 
 ```python
 # subset of MNIST images for embedding
-plot_labels = [2, 5, 7, 8]
+plot_labels = [2, 5, 7, 8, 9, 6]
 # generate mnist embeddings and labels for just the labels above
-mnist_plot_embs = [mnist_embeddings[mnist_labels==label] for label in plot_labels]
-mnist_plot_embs = np.concatenate(mnist_plot_embs, axis=0)
-mnist_plot_labels = [mnist_labels[mnist_labels==label] for label in plot_labels]
-mnist_plot_labels = np.concatenate(mnist_plot_labels, axis=0)
+plot_embds = [np.concatenate([emb[mnist_labels==label] 
+                    for label in plot_labels ], axis=0) 
+                          for emb in all_bary_embeddings]
+mnist_plot_labels = np.concatenate([mnist_labels[mnist_labels==label] 
+                                    for label in plot_labels], axis=0)
 ```
 
 ### MNIST LDA
@@ -232,24 +324,52 @@ Let's run LDA reduction for these MNIST embeddings.
 
 
 ```python
-# generate LDA embeddings
-T_lda, labels_balanced = LOTDimensionalityReduction.lda_reduction(mnist_plot_embs, 
-                                                                  mnist_plot_labels,
-                                                                  n_components=2)
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
-# Visualize LDA in 2D
-plt.figure(figsize=(8, 6))
-scatter = plt.scatter(T_lda[:, 0], T_lda[:, 1], c=labels_balanced, cmap='coolwarm', s=100)
-plt.title("LDA Reduction (2D Projection) for MNIST")
-plt.xlabel("LDA Component 1")
-plt.ylabel("LDA Component 2")
-plt.colorbar(scatter, label="Class Label")
+# Initialize the figure for multiple plots (2 rows, 2 columns in this case, but can be customized)
+fig = plt.figure(figsize=(20, 16))
+
+# Assume you have multiple iterations of T_lda and labels_balanced to compare
+iterations = [1, 2, 3, 4]  # Example iteration numbers
+cmap = plt.get_cmap('tab10')  # Use the same colormap for consistency
+
+# Iterate over each LDA embedding and corresponding labels
+for j, iteration in enumerate(iterations):
+    
+    # (Assuming you have T_lda and labels_balanced for each iteration separately)
+    mnist_plot_embs_j = plot_embds[j]
+    # You can replace this with actual T_lda and labels_balanced values for each iteration
+    T_lda, labels_balanced = LOTDimensionalityReduction.lda_reduction(mnist_plot_embs_j, 
+                                                                      mnist_plot_labels, 
+                                                                      n_components=3)
+    
+    # Create a 3D subplot for each iteration
+    ax = fig.add_subplot(2, 2, j + 1, projection='3d')
+    
+    # Loop through each class label and plot the points
+    for class_id in set(labels_balanced):  # Assuming labels_balanced contains all class IDs
+        curr_T_lda = T_lda[labels_balanced == class_id]
+        ax.scatter(curr_T_lda[:, 0], 
+                   curr_T_lda[:, 1], 
+                   curr_T_lda[:, 2], 
+                   color=cmap(class_id), label=f'Class {class_id}', alpha=0.7)
+    
+    ax.set_title(f"LDA Reduction (3D Projection) - Iteration {j}")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.legend()
+
+# Show the combined figure with all iterations
+plt.tight_layout()
 plt.show()
+
 ```
 
 
     
-![png](readme_pics/output_13_0.png)
+![png](readme_pics/output_15_0.png)
     
 
 
@@ -259,25 +379,54 @@ Now, let us run PCA reduction to the MNIST embeddings.
 
 
 ```python
-# Perform PCA reduction and visualize the result
-U, S, Vh, \
-    labels_balanced = LOTDimensionalityReduction.pca_reduction(mnist_plot_embs, 
-                                                               mnist_plot_labels)
-pclouds_pca = U @ np.diag(S)  # Project the data onto the first few principal components
+# Initialize the figure for multiple plots (2 rows, 2 columns in this case, but can be customized)
+fig = plt.figure(figsize=(20, 16))
 
-plt.figure(figsize=(8, 6))
-scatter = plt.scatter(pclouds_pca[:, 0], pclouds_pca[:, 1], 
-                      c=labels_balanced, cmap='plasma', s=100)
-plt.title("PCA Reduction (2D Projection) for MNIST")
-plt.xlabel("Principal Component 1")
-plt.ylabel("Principal Component 2")
-plt.colorbar(scatter, label="Class Label")
+# Assume you have multiple iterations of T_lda and labels_balanced to compare
+iterations = [1, 2, 3, 4]  # Example iteration numbers
+cmap = plt.get_cmap('tab10')  # Use the same colormap for consistency
+
+# Iterate over each LDA embedding and corresponding labels
+for j, iteration in enumerate(iterations):
+    
+    # (Assuming you have T_lda and labels_balanced for each iteration separately)
+    mnist_plot_embs_j = plot_embds[j]
+    # You can replace this with actual T_lda and labels_balanced values for each iteration
+    T_lda, labels_balanced = LOTDimensionalityReduction.lda_reduction(mnist_plot_embs_j, 
+                                                                      mnist_plot_labels, 
+                                                                      n_components=3)
+
+    # Perform PCA reduction and visualize the result
+    U, S, Vh, \
+        labels_balanced = LOTDimensionalityReduction.pca_reduction(mnist_plot_embs_j, 
+                                                               mnist_plot_labels)
+    pclouds_pca = U @ np.diag(S)  # Project the data onto the first few principal components
+    
+    # Create a 3D subplot for each iteration
+    ax = fig.add_subplot(2, 2, j + 1, projection='3d')
+    
+    # Loop through each class label and plot the points
+    for class_id in set(labels_balanced):  # Assuming labels_balanced contains all class IDs
+        curr_T_pca = pclouds_pca[labels_balanced==class_id]
+        ax.scatter(curr_T_pca[:, 0], 
+                   curr_T_pca[:, 1], 
+                   curr_T_pca[:, 2], 
+                   color=cmap(class_id), label=f'Class {class_id}', alpha=0.7)
+    
+    ax.set_title(f"PCA Reduction (3D Projection) - Iteration {j}")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.legend()
+
+# Show the combined figure with all iterations
+plt.tight_layout()
 plt.show()
 ```
 
 
     
-![png](readme_pics/output_15_0.png)
+![png](readme_pics/output_17_0.png)
     
 
 
@@ -302,7 +451,7 @@ plt.show()
 
 
     
-![png](readme_pics/output_17_0.png)
+![png](readme_pics/output_19_0.png)
     
 
 
@@ -330,7 +479,7 @@ plt.show()
 
 
     
-![png](readme_pics/output_19_0.png)
+![png](readme_pics/output_21_0.png)
     
 
 
@@ -384,14 +533,57 @@ for i in range(10, 25):
     fig.delaxes(axes[i])
 
 plt.tight_layout()
-plt.title('MNIST visualization')
+plt.title('MNIST In-Class Barycenter Visualization | Gaussian Reference')
 plt.show()
 
 ```
 
 
     
-![png](readme_pics/output_21_0.png)
+![png](readme_pics/output_23_0.png)
+    
+
+
+
+```python
+# Visualize barycenters when the reference itself was a barycenter
+
+# Visualize the first point cloud from each MNIST class in a 5x5 grid of subplots
+fig, axes = plt.subplots(5, 5, figsize=(15, 15))
+axes = axes.flatten()
+
+colors = ['r', 'b', 'g', 'm', 'c', 'y', 'k', 'orange', 'purple', 'brown']
+idx = 1
+for class_id in range(10):
+    ax = axes[class_id]
+    curr_bary = barycenter_list[idx][barycenter_label_list[idx] == class_id]
+    # Gets the portion of the barycenter that corresponds to the class rather than the entire vector
+    h_step = 2 * mnist_reference_points
+    curr_bary = curr_bary[:,h_step * class_id:h_step * (class_id + 1)]
+    curr_bary = curr_bary.reshape(mnist_reference_points, 2) # convert embedding back to 2d
+    # Swap x and y to correct the orientation
+    ax.scatter(curr_bary[:, 1], 
+               curr_bary[:, 0], 
+               c=colors[class_id], alpha=0.7, s=10)
+    ax.set_title(f"MNIST Class {class_id}")
+    ax.set_xlim([0, 28])
+    ax.set_ylim([0, 28])
+    ax.invert_yaxis()  # Keep the y-axis inverted to match the image coordinates
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+# Hide any empty subplots (in the last row)
+for i in range(10, 25):
+    fig.delaxes(axes[i])
+
+plt.tight_layout()
+plt.title('MNIST In-Class Barycenter Visualization | Barycenter reference')
+plt.show()
+```
+
+
+    
+![png](readme_pics/output_24_0.png)
     
 
 
@@ -471,7 +663,7 @@ plt.show()
 
 
     
-![png](readme_pics/output_23_0.png)
+![png](readme_pics/output_26_0.png)
     
 
 
@@ -479,12 +671,13 @@ plt.show()
 
 
 Finally, we'll use the LOTClassifier to find the best classifier for our MNIST dataset.
-We'll split the data into training and testing sets.  So far, the classifiers we use are K-nearest neighbors and support vector classifiers.
+We'll split the data into training and testing sets.  So far, the classifiers we use are K-nearest neighbors and support vector classifiers.  Note how the classification accuracy jumps when we use the barycenters as the reference measure.
 
 
 ```python
+# Gaussian Reference - Iteration 0
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(mnist_embeddings, mnist_labels, 
+X_train, X_test, y_train, y_test = train_test_split(all_bary_embeddings[0], mnist_labels, 
                                                     test_size=0.2, random_state=42)
 
 # Train the classifier on the original 3D data
@@ -493,8 +686,8 @@ best_clf = LOTClassifier.get_best_classifier(X_train, y_train, X_test, y_test)
 print("Best Classifier:\n", best_clf)
 ```
 
-    KNN Validation Avg. Accuracy: 95.72, Std: 0.00
-    Classifier = KNN, Test Accuracy = 96.10
+    KNN Validation Avg. Accuracy: 95.72%, Std: 0.00
+    Classifier = KNN, Test Accuracy = 96.10%
                   precision    recall  f1-score   support
     
                0       0.96      0.99      0.98      1181
@@ -512,8 +705,8 @@ print("Best Classifier:\n", best_clf)
        macro avg       0.96      0.96      0.96     12000
     weighted avg       0.96      0.96      0.96     12000
     
-    Linear SVM Validation Avg. Accuracy: 96.32, Std: 0.00
-    Classifier = Linear SVM, Test Accuracy = 96.28
+    Linear SVM Validation Avg. Accuracy: 96.32%, Std: 0.00
+    Classifier = Linear SVM, Test Accuracy = 96.28%
                   precision    recall  f1-score   support
     
                0       0.98      0.99      0.98      1181
@@ -531,8 +724,8 @@ print("Best Classifier:\n", best_clf)
        macro avg       0.96      0.96      0.96     12000
     weighted avg       0.96      0.96      0.96     12000
     
-    RBF SVM Validation Avg. Accuracy: 96.70, Std: 0.00
-    Classifier = RBF SVM, Test Accuracy = 96.99
+    RBF SVM Validation Avg. Accuracy: 96.70%, Std: 0.00
+    Classifier = RBF SVM, Test Accuracy = 96.99%
                   precision    recall  f1-score   support
     
                0       0.98      0.98      0.98      1181
@@ -551,7 +744,235 @@ print("Best Classifier:\n", best_clf)
     weighted avg       0.97      0.97      0.97     12000
     
     --------------------------------------------------------------------------------
-    Best --> Classifier = RBF SVM, Test Accuracy = 96.70
+    Best --> Classifier = RBF SVM, Test Accuracy = 96.70%
     Best Classifier:
      SVC()
+
+
+
+```python
+# Barycenter Reference - Iteration 1
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(all_bary_embeddings[1], mnist_labels, 
+                                                    test_size=0.2, random_state=42)
+
+# Train the classifier on the original 3D data
+best_clf = LOTClassifier.get_best_classifier(X_train, y_train, X_test, y_test)
+
+print("Best Classifier:\n", best_clf)
+```
+
+    KNN Validation Avg. Accuracy: 95.88%, Std: 0.00
+    Classifier = KNN, Test Accuracy = 96.46%
+                  precision    recall  f1-score   support
+    
+               0       0.97      0.99      0.98      1181
+               1       0.98      0.99      0.98      1350
+               2       0.97      0.96      0.97      1162
+               3       0.95      0.95      0.95      1203
+               4       0.98      0.94      0.96      1124
+               5       0.98      0.93      0.96      1116
+               6       0.98      0.99      0.98      1221
+               7       0.98      0.95      0.97      1249
+               8       0.95      0.96      0.95      1210
+               9       0.91      0.98      0.94      1184
+    
+        accuracy                           0.96     12000
+       macro avg       0.97      0.96      0.96     12000
+    weighted avg       0.97      0.96      0.96     12000
+    
+    Linear SVM Validation Avg. Accuracy: 98.04%, Std: 0.00
+    Classifier = Linear SVM, Test Accuracy = 98.02%
+                  precision    recall  f1-score   support
+    
+               0       0.98      0.99      0.99      1181
+               1       0.99      0.99      0.99      1350
+               2       0.97      0.98      0.98      1162
+               3       0.97      0.98      0.97      1203
+               4       0.98      0.99      0.99      1124
+               5       0.98      0.97      0.98      1116
+               6       0.98      0.98      0.98      1221
+               7       0.98      0.99      0.98      1249
+               8       0.99      0.97      0.98      1210
+               9       0.98      0.97      0.97      1184
+    
+        accuracy                           0.98     12000
+       macro avg       0.98      0.98      0.98     12000
+    weighted avg       0.98      0.98      0.98     12000
+    
+    RBF SVM Validation Avg. Accuracy: 96.81%, Std: 0.00
+    Classifier = RBF SVM, Test Accuracy = 96.90%
+                  precision    recall  f1-score   support
+    
+               0       0.98      0.98      0.98      1181
+               1       0.98      0.99      0.98      1350
+               2       0.96      0.97      0.97      1162
+               3       0.95      0.96      0.96      1203
+               4       0.97      0.97      0.97      1124
+               5       0.97      0.97      0.97      1116
+               6       0.98      0.98      0.98      1221
+               7       0.97      0.97      0.97      1249
+               8       0.97      0.94      0.96      1210
+               9       0.95      0.95      0.95      1184
+    
+        accuracy                           0.97     12000
+       macro avg       0.97      0.97      0.97     12000
+    weighted avg       0.97      0.97      0.97     12000
+    
+    --------------------------------------------------------------------------------
+    Best --> Classifier = Linear SVM, Test Accuracy = 98.04%
+    Best Classifier:
+     SVC(kernel='linear')
+
+
+
+```python
+# Barycenter Reference - Iteration 2
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(all_bary_embeddings[2], mnist_labels, 
+                                                    test_size=0.2, random_state=42)
+
+# Train the classifier on the original 3D data
+best_clf = LOTClassifier.get_best_classifier(X_train, y_train, X_test, y_test)
+
+print("Best Classifier:\n", best_clf)
+```
+
+    KNN Validation Avg. Accuracy: 95.93%, Std: 0.00
+    Classifier = KNN, Test Accuracy = 96.39%
+                  precision    recall  f1-score   support
+    
+               0       0.96      0.99      0.98      1181
+               1       0.97      0.99      0.98      1350
+               2       0.97      0.96      0.97      1162
+               3       0.95      0.95      0.95      1203
+               4       0.98      0.94      0.96      1124
+               5       0.98      0.93      0.96      1116
+               6       0.98      0.99      0.98      1221
+               7       0.98      0.95      0.97      1249
+               8       0.95      0.95      0.95      1210
+               9       0.91      0.98      0.94      1184
+    
+        accuracy                           0.96     12000
+       macro avg       0.96      0.96      0.96     12000
+    weighted avg       0.96      0.96      0.96     12000
+    
+    Linear SVM Validation Avg. Accuracy: 98.00%, Std: 0.00
+    Classifier = Linear SVM, Test Accuracy = 98.10%
+                  precision    recall  f1-score   support
+    
+               0       0.99      0.99      0.99      1181
+               1       0.99      0.99      0.99      1350
+               2       0.97      0.98      0.98      1162
+               3       0.97      0.97      0.97      1203
+               4       0.98      0.99      0.99      1124
+               5       0.98      0.97      0.98      1116
+               6       0.98      0.99      0.98      1221
+               7       0.98      0.99      0.98      1249
+               8       0.98      0.96      0.97      1210
+               9       0.98      0.97      0.98      1184
+    
+        accuracy                           0.98     12000
+       macro avg       0.98      0.98      0.98     12000
+    weighted avg       0.98      0.98      0.98     12000
+    
+    RBF SVM Validation Avg. Accuracy: 96.82%, Std: 0.00
+    Classifier = RBF SVM, Test Accuracy = 96.98%
+                  precision    recall  f1-score   support
+    
+               0       0.98      0.98      0.98      1181
+               1       0.98      0.99      0.98      1350
+               2       0.96      0.97      0.97      1162
+               3       0.95      0.96      0.96      1203
+               4       0.97      0.98      0.97      1124
+               5       0.97      0.97      0.97      1116
+               6       0.98      0.98      0.98      1221
+               7       0.97      0.97      0.97      1249
+               8       0.97      0.95      0.96      1210
+               9       0.96      0.95      0.95      1184
+    
+        accuracy                           0.97     12000
+       macro avg       0.97      0.97      0.97     12000
+    weighted avg       0.97      0.97      0.97     12000
+    
+    --------------------------------------------------------------------------------
+    Best --> Classifier = Linear SVM, Test Accuracy = 98.00%
+    Best Classifier:
+     SVC(kernel='linear')
+
+
+
+```python
+# Barycenter Reference - Iteration 3
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(all_bary_embeddings[3], mnist_labels, 
+                                                    test_size=0.2, random_state=42)
+
+# Train the classifier on the original 3D data
+best_clf = LOTClassifier.get_best_classifier(X_train, y_train, X_test, y_test)
+
+print("Best Classifier:\n", best_clf)
+```
+
+    KNN Validation Avg. Accuracy: 95.92%, Std: 0.00
+    Classifier = KNN, Test Accuracy = 96.36%
+                  precision    recall  f1-score   support
+    
+               0       0.96      0.99      0.98      1181
+               1       0.97      0.99      0.98      1350
+               2       0.97      0.96      0.97      1162
+               3       0.95      0.94      0.95      1203
+               4       0.98      0.94      0.96      1124
+               5       0.98      0.93      0.95      1116
+               6       0.98      0.99      0.98      1221
+               7       0.98      0.95      0.97      1249
+               8       0.95      0.95      0.95      1210
+               9       0.91      0.98      0.94      1184
+    
+        accuracy                           0.96     12000
+       macro avg       0.96      0.96      0.96     12000
+    weighted avg       0.96      0.96      0.96     12000
+    
+    Linear SVM Validation Avg. Accuracy: 98.02%, Std: 0.00
+    Classifier = Linear SVM, Test Accuracy = 98.00%
+                  precision    recall  f1-score   support
+    
+               0       0.98      0.99      0.99      1181
+               1       0.99      0.99      0.99      1350
+               2       0.97      0.98      0.98      1162
+               3       0.97      0.97      0.97      1203
+               4       0.98      0.99      0.99      1124
+               5       0.98      0.97      0.97      1116
+               6       0.98      0.99      0.98      1221
+               7       0.98      0.99      0.98      1249
+               8       0.98      0.96      0.97      1210
+               9       0.98      0.97      0.98      1184
+    
+        accuracy                           0.98     12000
+       macro avg       0.98      0.98      0.98     12000
+    weighted avg       0.98      0.98      0.98     12000
+    
+    RBF SVM Validation Avg. Accuracy: 96.82%, Std: 0.00
+    Classifier = RBF SVM, Test Accuracy = 96.99%
+                  precision    recall  f1-score   support
+    
+               0       0.98      0.98      0.98      1181
+               1       0.98      0.99      0.98      1350
+               2       0.96      0.97      0.97      1162
+               3       0.95      0.96      0.96      1203
+               4       0.97      0.97      0.97      1124
+               5       0.97      0.97      0.97      1116
+               6       0.98      0.98      0.98      1221
+               7       0.97      0.97      0.97      1249
+               8       0.97      0.95      0.96      1210
+               9       0.95      0.95      0.95      1184
+    
+        accuracy                           0.97     12000
+       macro avg       0.97      0.97      0.97     12000
+    weighted avg       0.97      0.97      0.97     12000
+    
+    --------------------------------------------------------------------------------
+    Best --> Classifier = Linear SVM, Test Accuracy = 98.02%
+    Best Classifier:
+     SVC(kernel='linear')
 

@@ -1,5 +1,7 @@
 import numpy as np
 import ot  # Library for Optimal Transport computations
+from pyLOT.barycenters import LOTBarycenter
+import time
 
 class LOTEmbedding:
     # Define a small epsilon value to avoid division by zero errors
@@ -135,3 +137,86 @@ class LOTEmbedding:
 
         # Stack the flattened embeddings into a single array and return it
         return np.stack(pclouds)  # Shape: (num_point_clouds, m*dt)
+
+    def compute_barycenter_embeddings(n_iterations, 
+                                      embeddings, 
+                                      labels, 
+                                      pclouds, 
+                                      masses, 
+                                      n_reference_points, 
+                                      n_dim):
+        """
+        Function to compute barycenter embeddings over multiple iterations.
+
+        Parameters:
+        - n_iterations: Number of iterations to run
+        - embeddings: Initial embeddings
+        - labels: Corresponding labels
+        - pclouds: Point clouds
+        - masses: Mass distribution (for LOT embedding)
+        - n_reference_points: Number of reference points for the barycenter
+        - n_dim: Dimensionality for reshaping the reference points
+        """
+        # Store embeddings and EMD results for each iteration
+
+        if embeddings is None:
+            # generate Gaussian reference for data
+            all_pts = np.concatenate(pclouds, axis=0)
+            mean = all_pts.mean(axis=0)
+            # Calculate the covariance matrix (how dimensions co-vary)
+            covariance = np.cov(all_pts, rowvar=False)
+            # generate normal reference measure
+            xr = np.random.multivariate_normal(mean, covariance, n_reference_points)
+            print('Generating embeddings for MNIST data...')
+            # Compute LOT embeddings using the LOT embedding method for MNIST data
+            embeddings = LOTEmbedding.embed_point_clouds(xr, pclouds,xt_masses=masses,
+                                                    sinkhorn=False, lambd=5)
+
+        all_bary_embeddings = [embeddings]
+        all_emd_lists = []
+        barycenter_list = []
+        barycenter_label_list = []
+
+        for j in range(n_iterations):
+            print(f"Starting iteration {j + 1}...")
+            curr_bary_embd = all_bary_embeddings[j]
+            
+            # Generate barycenters from current embeddings
+            barycenters, \
+                barycenter_labels, \
+                used_weights = LOTBarycenter.generate_barycenters_within_class(curr_bary_embd, 
+                                                                           labels, 
+                                                                           uniform=True)
+            barycenter_list.append(barycenters)
+            barycenter_label_list.append(barycenter_labels)
+            emd_lst = []
+            start_time = time.time()
+            
+            for idx, curr_bary in enumerate(barycenters):
+                if j > 0:
+                    # Gets the portion of the barycenter that corresponds to the class rather than the entire vector
+                    h_step = n_dim * n_reference_points
+                    curr_bary = curr_bary[h_step * idx:h_step * (idx + 1)]
+                    
+                # Reshape to match n_reference_points and n_dim
+                curr_bary = curr_bary.reshape(n_reference_points, n_dim)
+                
+                # Calculate LOT embedding using barycenter as reference
+                emd_lst.append(LOTEmbedding.embed_point_clouds(curr_bary, 
+                                                               pclouds, 
+                                                               xt_masses=masses))
+                comp_time = time.time() - start_time
+                print(f'Finished processing LOT embedding for class {idx} in iteration {j + 1}')
+                print(f'Time taken for barycenter embeddings: {comp_time:.2f} seconds')
+            
+            # Store the results of the current iteration
+            bary_embeddings = np.hstack(emd_lst)
+            all_bary_embeddings.append(bary_embeddings)
+            all_emd_lists.append(emd_lst)
+
+            # Output time for the whole iteration
+            total_time = time.time() - start_time
+            print(f"Iteration {j + 1} complete. Total time: {total_time:.2f} seconds.\n")
+        
+        return all_bary_embeddings, all_emd_lists, barycenter_list, barycenter_label_list
+
