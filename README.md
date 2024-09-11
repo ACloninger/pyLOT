@@ -1,8 +1,6 @@
 # pyLOT
 
-This tutorial will guide you through the functionalities of the pyLOT library for linearized optimal transport (LOT).  LOT is used to transform point-cloud-valued data or, more specifically, measure-valued data into an $L_2$ space.  Once in this $L_2$ space, one can perform many of the machine learning techniques that are available in other packages.  For many problems, this framework also saves tons of computation time.  LOT works by using optimal transport (OT) by sending each measure-valued data point to an optimal transport map with respect to a fixed reference measure $\sigma$:
-
-![LOT equation](https://latex.codecogs.com/png.latex?\bg_white%20LOT_\sigma%20(\mu)%20=%20\arg\min_{T:%20T_\sharp%20\sigma%20=%20\mu}%
+This tutorial will guide you through the functionalities of the pyLOT library for linearized optimal transport (LOT).  LOT is used to transform point-cloud-valued data or, more specifically, measure-valued data into an $L_2$ space.  Once in this $L_2$ space, one can perform many of the machine learning techniques that are available in other packages.  For many problems, this framework also saves tons of computation time.  LOT works by using optimal transport (OT) by sending each measure-valued data point to an optimal transport map with respect to a fixed reference measure $\sigma$: $LOT_\sigma (\mu) = \arg\min_{T: T_\sharp \sigma = \mu} \int_{\mathbb{R}^d} \Vert T(x) - x \Vert^2 d\sigma(x)$.
 
 To reconstruct measures from the LOT embedding, one simply pushes forward the reference measure by the LOT embedding (which applies the exponential map on the Wasserstein manifold).
 
