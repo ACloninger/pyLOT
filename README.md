@@ -1,6 +1,6 @@
 # pyLOT
 
-This tutorial will guide you through the functionalities of the pyLOT library for linearized optimal transport (LOT).  LOT is used to transform point-cloud-valued data or, more specifically, measure-valued data into an $L_2$ space.  Once in this $L_2$ space, one can perform many of the machine learning techniques that are available in other packages.  For many problems, this framework also saves tons of computation time.  LOT works by using optimal transport (OT) by sending each measure-valued data point to an optimal transport map with respect to a fixed reference measure $\sigma$: 
+To install, use `pip install pylotlib`.  This tutorial will guide you through the functionalities of the pyLOT library for linearized optimal transport (LOT).  LOT is used to transform point-cloud-valued data or, more specifically, measure-valued data into an $L_2$ space.  Once in this $L_2$ space, one can perform many of the machine learning techniques that are available in other packages.  For many problems, this framework also saves tons of computation time.  LOT works by using optimal transport (OT) by sending each measure-valued data point to an optimal transport map with respect to a fixed reference measure $\sigma$: 
 
 $$LOT_\sigma (\mu) = \arg\min_{T: T_\sharp \sigma = \mu} \int_{\mathbb{R}^d} \Vert T(x) - x \Vert^2 d\sigma(x).$$
 
@@ -15,6 +15,11 @@ The functionality available for this library is:
 
 This guide will demonstrate how to use this library effectively by using two toy examples:  MNIST data and multivariate Gaussian data.
 
+
+
+```python
+#!pip install pylotlib
+```
 
 
 ```python
