@@ -62,7 +62,7 @@ For this toy data, we will create four classes of point-cloud-valued data, where
 
 
 ```python
-from tutorial_data_generation import generate_mnist_clouds, generate_gauss_point_clouds
+from pyLOT.tutorial_data_generation import generate_mnist_clouds, generate_gauss_point_clouds
 
 # Generate MNIST clouds, masses, and labels
 mnist_pclouds, mnist_masses, mnist_labels, mnist_class_clouds = generate_mnist_clouds()
