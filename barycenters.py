@@ -45,13 +45,12 @@ class LOTBarycenter:
         # If no weights are provided, generate random or uniform weights
         if weights is None:
             weights = []
-            output_labels = []
-
+            
             # Iterate through each unique label
             for label in unique_labels:
                 # Select the point clouds corresponding to the current label
                 pclouds_class = pclouds[labels == label]
-                output_labels += [label] * n
+                
 
                 # Generate 'n' weight vectors
                 for _ in range(n):
@@ -63,10 +62,12 @@ class LOTBarycenter:
 
         # List to store the generated barycenters
         barycenters = []
+        output_labels = []
         
         # Iterate through each unique label to generate barycenters
         for i, label in enumerate(unique_labels):
             # Select the point clouds corresponding to the current label
+            output_labels += [label] * n
             pclouds_class = pclouds[labels == label]
             
             # Generate barycenters using the weights
