@@ -1,6 +1,6 @@
 import numpy as np
 import ot  # Library for Optimal Transport computations
-from pyLOT.barycenters import LOTBarycenter
+from barycenters import LOTBarycenter
 import time
 
 class LOTEmbedding:
@@ -167,7 +167,6 @@ class LOTEmbedding:
             covariance = np.cov(all_pts, rowvar=False)
             # generate normal reference measure
             xr = np.random.multivariate_normal(mean, covariance, n_reference_points)
-            print('Generating embeddings for MNIST data...')
             # Compute LOT embeddings using the LOT embedding method for MNIST data
             embeddings = LOTEmbedding.embed_point_clouds(xr, pclouds,xt_masses=masses,
                                                     sinkhorn=False, lambd=5)
