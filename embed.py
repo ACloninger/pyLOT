@@ -8,7 +8,7 @@ class LOTEmbedding:
     EPISLON = np.finfo(float).eps
 
     @staticmethod
-    def calc_OTmap(xr, xt, a=None, b=None, M=None, sinkhorn=False, lambd=1, normalize_T=False):
+    def calc_OTmap(xr, xt, a=None, b=None, M=None, sinkhorn=False, lambd=1, normalize_T=False, numItermax=100000):
         """
         Compute the Optimal Transport (OT) map between a reference point cloud and a target point cloud.
 
@@ -39,6 +39,9 @@ class LOTEmbedding:
             Whether to normalize the resulting transport map by the square root of the number of reference points.
             Default is False.
 
+        numItermax : int, optional
+            Maximum number of iterations in calc_OTmap
+
         Returns:
         --------
         T : ndarray
@@ -63,10 +66,10 @@ class LOTEmbedding:
         # Compute the Optimal Transport plan G
         if sinkhorn:
             # Use the Sinkhorn algorithm for entropic regularization
-            G = ot.sinkhorn(a, b, M, lambd)
+            G = ot.sinkhorn(a, b, M, lambd, numItermax=numItermax)
         else:
             # Use the exact Linear Programming (LP) method to compute the OT plan
-            G = ot.emd(a, b, M)
+            G = ot.emd(a, b, M, numItermax=numItermax)
 
         # Normalize each row of the transport plan G to obtain a stochastic matrix
         Gstochastic = G / (G.sum(axis=1)[:, None] + LOTEmbedding.EPISLON)
@@ -81,7 +84,7 @@ class LOTEmbedding:
         return T  # Return the barycentric projection
 
     @staticmethod
-    def embed_point_clouds(xr, xt_lst, r_mass=None, xt_masses=None, sinkhorn=False, lambd=1, normalize_T=False):
+    def embed_point_clouds(xr, xt_lst, r_mass=None, xt_masses=None, sinkhorn=False, lambd=1, normalize_T=False, numItermax=100000):
         """
         Embed a list of target point clouds into the reference point cloud space using LOT embeddings.
 
@@ -110,6 +113,9 @@ class LOTEmbedding:
             Whether to normalize the transport maps by the square root of the number of reference points.
             Default is False.
 
+        numItermax : int, optional
+            Maximum number of iterations in calc_OTmap
+
         Returns:
         --------
         pclouds : ndarray
@@ -130,7 +136,7 @@ class LOTEmbedding:
                 b = xt_masses[j]
             
             # Compute the LOT embedding (barycentric projection) for the current target point cloud
-            T = LOTEmbedding.calc_OTmap(xr, xt, a=a, b=b, sinkhorn=sinkhorn, lambd=lambd, normalize_T=normalize_T)
+            T = LOTEmbedding.calc_OTmap(xr, xt, a=a, b=b, sinkhorn=sinkhorn, lambd=lambd, normalize_T=normalize_T, numItermax=numItermax)
             
             # Flatten the embedding matrix T and add it to the list
             pclouds.append(T.reshape(-1))
@@ -144,7 +150,8 @@ class LOTEmbedding:
                                       pclouds, 
                                       masses, 
                                       n_reference_points, 
-                                      n_dim):
+                                      n_dim,
+                                      numItermax=100000):
         """
         Function to compute barycenter embeddings over multiple iterations.
 
@@ -156,6 +163,7 @@ class LOTEmbedding:
         - masses: Mass distribution (for LOT embedding)
         - n_reference_points: Number of reference points for the barycenter
         - n_dim: Dimensionality for reshaping the reference points
+        - numItermax: Maximum number of iterations in calc_OTmap
         """
         # Store embeddings and EMD results for each iteration
 
@@ -169,7 +177,7 @@ class LOTEmbedding:
             xr = np.random.multivariate_normal(mean, covariance, n_reference_points)
             # Compute LOT embeddings using the LOT embedding method for MNIST data
             embeddings = LOTEmbedding.embed_point_clouds(xr, pclouds,xt_masses=masses,
-                                                    sinkhorn=False, lambd=5)
+                                                    sinkhorn=False, lambd=5, numItermax=numItermax)
 
         all_bary_embeddings = [embeddings]
         all_emd_lists = []
@@ -201,9 +209,14 @@ class LOTEmbedding:
                 curr_bary = curr_bary.reshape(n_reference_points, n_dim)
                 
                 # Calculate LOT embedding using barycenter as reference
-                emd_lst.append(LOTEmbedding.embed_point_clouds(curr_bary, 
-                                                               pclouds, 
-                                                               xt_masses=masses))
+                emd_lst.append(
+                    LOTEmbedding.embed_point_clouds(
+                        curr_bary,
+                        pclouds,
+                        xt_masses=masses, 
+                        numItermax=numItermax
+                    )
+                )
                 comp_time = time.time() - start_time
                 print(f'Finished processing LOT embedding for class {idx} in iteration {j + 1}')
                 print(f'Time taken for barycenter embeddings: {comp_time:.2f} seconds')
