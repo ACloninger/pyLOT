@@ -180,7 +180,7 @@ class LOTEmbedding:
                                                     sinkhorn=False, lambd=5, numItermax=numItermax)
 
         all_bary_embeddings = [embeddings]
-        all_emd_lists = []
+        # all_emd_lists = []
         barycenter_list = []
         barycenter_label_list = []
 
@@ -224,11 +224,11 @@ class LOTEmbedding:
             # Store the results of the current iteration
             bary_embeddings = np.hstack(emd_lst)
             all_bary_embeddings.append(bary_embeddings)
-            all_emd_lists.append(emd_lst)
+            # all_emd_lists.append(emd_lst)
 
             # Output time for the whole iteration
             total_time = time.time() - start_time
             print(f"Iteration {j + 1} complete. Total time: {total_time:.2f} seconds.\n")
         
-        return all_bary_embeddings, all_emd_lists, barycenter_list, barycenter_label_list
+        return all_bary_embeddings, barycenter_list, barycenter_label_list
 

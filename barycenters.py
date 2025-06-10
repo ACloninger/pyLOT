@@ -2,7 +2,7 @@ import numpy as np
 
 class LOTBarycenter:
     @staticmethod
-    def generate_barycenters_within_class(pclouds, labels, weights=None, uniform=True, n=1):
+    def generate_barycenters_within_class(pclouds, labels, weights=None, output_labels=None, uniform=True, n=1):
         """
         Generate barycenters of point clouds within the same class.
 
@@ -19,6 +19,12 @@ class LOTBarycenter:
         weights : list of np.array, optional
             A list of weight vectors for generating barycenters. If `None`, random weights will be generated.
             Default is None.
+
+        output_labels : list or np.array, optional
+            A list of labels corresponding to the output barycenters. Must be given if weights is given, and must be same length as weights. Specifies which class each weight vector corresponds to.
+        
+        uniform : bool, optional
+            Whether the returned barycenter uses the uniform weight vector. Default is true, overridden if weights is given
         
         n : int, optional
             The number of random weight vectors to generate for each unique label if `weights` is not provided.
@@ -40,39 +46,51 @@ class LOTBarycenter:
         unique_labels = np.unique(labels)
         
         # If uniform is True, only generate 1 barycenter per class
-        if uniform: n = 1
+        if uniform: 
+            n = 1
         
         # If no weights are provided, generate random or uniform weights
         if weights is None:
             weights = []
+            output_labels = []
             
             # Iterate through each unique label
             for label in unique_labels:
                 # Select the point clouds corresponding to the current label
                 pclouds_class = pclouds[labels == label]
                 
+                # create output_labels list
+                output_labels += [label] * n
 
                 # Generate 'n' weight vectors
                 for _ in range(n):
                     # Generate random weights
-                    lambd = np.random.rand(pclouds_class.shape[0])  
+                    lambd = np.random.exponential(scale=1, size=pclouds_class.shape[0])  
                     if uniform: lambd = np.ones(pclouds_class.shape[0])  # If uniform, set all weights to 1
                     lambd /= lambd.sum()  # Normalize the weights to sum to 1
                     weights.append(lambd)
+                
+        # else:
+        #     n = len(weights)
+        #     weights = np.vstack([weights]*len(unique_labels))
+            
 
         # List to store the generated barycenters
         barycenters = []
-        output_labels = []
         
-        # Iterate through each unique label to generate barycenters
-        for i, label in enumerate(unique_labels):
-            # Select the point clouds corresponding to the current label
-            output_labels += [label] * n
+        for i in range(len(weights)):
+            label = output_labels[i]
             pclouds_class = pclouds[labels == label]
+            barycenters.append(np.dot(weights[i],pclouds_class))
+        
+        # # Iterate through each unique label to generate barycenters
+        # for i, label in enumerate(unique_labels):
+        #     # Select the point clouds corresponding to the current label
+        #     pclouds_class = pclouds[labels == label]
             
-            # Generate barycenters using the weights
-            for weight in weights[i * n:(i + 1) * n]:
-                barycenters.append(np.dot(weight, pclouds_class))
+        #     # Generate barycenters using the weights
+        #     for weight in weights[i * n:(i + 1) * n]:
+        #         barycenters.append(np.dot(weight, pclouds_class))
 
         # Return the generated barycenters, corresponding labels, and weights used
         return np.array(barycenters), np.array(output_labels), weights
